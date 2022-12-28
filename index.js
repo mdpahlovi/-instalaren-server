@@ -30,6 +30,7 @@ function verifyJWT(req, res, next) {
 
 const database = async () => {
     const userCollection = client.db("instalaren").collection("users");
+    const postCollection = client.db("instalaren").collection("posts");
 
     // Save User To DB , Generate & Sent JWT Token to site
     app.put("/user/:email", async (req, res) => {
@@ -53,6 +54,40 @@ const database = async () => {
         const filter = { email: email };
         const user = await userCollection.findOne(filter);
         res.send(user);
+    });
+
+    // Save User To DB , Generate & Sent JWT Token to site
+    app.put("/post/:id", async (req, res) => {
+        const { id } = req.params;
+        const post = req.body;
+        const filter = { _id: ObjectId(id) };
+        const options = { upsert: true };
+        const updateDoc = {
+            $set: post,
+        };
+        const result = await postCollection.updateOne(filter, updateDoc, options);
+        res.send({ result, token });
+    });
+
+    app.get("/post/:id", async (req, res) => {
+        const { id } = req.params;
+        const filter = { _id: ObjectId(id) };
+        const post = await postCollection.findOne(filter);
+        res.send(post);
+    });
+
+    app.post("/post", async (req, res) => {
+        const post = req.body;
+        const result = await postCollection.insertOne({ post });
+        if (result.insertedId) {
+            res.send({ message: "Successfully Added Post" });
+        }
+    });
+
+    app.get("/posts", async (req, res) => {
+        const curser = postCollection.find({});
+        const posts = await curser.toArray();
+        res.send(posts);
     });
 };
 
