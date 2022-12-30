@@ -1,6 +1,5 @@
 require("dotenv").config();
 const cors = require("cors");
-const jwt = require("jsonwebtoken");
 const { MongoClient, ObjectId } = require("mongodb");
 const express = require("express");
 const app = express();
@@ -10,23 +9,8 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const uri = process.env.MongoURL;
+const uri = `mongodb+srv://${process.env.DB_User}:${process.env.DB_Pass}@instalaren.jia3ipa.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri);
-
-function verifyJWT(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).send({ message: "Unauthorized Access" });
-    }
-    const token = authHeader.split(" ")[1];
-    jwt.verify(token, process.env.ACC_Token, function (err, decoded) {
-        if (err) {
-            return res.status(403).send({ message: "Forbidden Access" });
-        }
-        req.decoded = decoded;
-        next();
-    });
-}
 
 const database = async () => {
     const userCollection = client.db("instalaren").collection("users");
@@ -42,10 +26,7 @@ const database = async () => {
             $set: user,
         };
         const result = await userCollection.updateOne(filter, updateDoc, options);
-        const token = jwt.sign(user, process.env.ACC_Token, {
-            expiresIn: "1d",
-        });
-        res.send({ result, token });
+        res.send(result);
     });
 
     // Get User by email
@@ -66,7 +47,7 @@ const database = async () => {
             $set: post,
         };
         const result = await postCollection.updateOne(filter, updateDoc, options);
-        res.send({ result, token });
+        res.send(result);
     });
 
     app.get("/post/:id", async (req, res) => {
@@ -78,7 +59,7 @@ const database = async () => {
 
     app.post("/post", async (req, res) => {
         const post = req.body;
-        const result = await postCollection.insertOne({ post });
+        const result = await postCollection.insertOne(post);
         if (result.insertedId) {
             res.send({ message: "Successfully Added Post" });
         }
