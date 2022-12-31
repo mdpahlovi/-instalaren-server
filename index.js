@@ -37,7 +37,7 @@ const database = async () => {
         res.send(user);
     });
 
-    // Save User To DB , Generate & Sent JWT Token to site
+    // Post update filter by id
     app.put("/post/:id", async (req, res) => {
         const { id } = req.params;
         const post = req.body;
@@ -50,6 +50,7 @@ const database = async () => {
         res.send(result);
     });
 
+    //Get post by id
     app.get("/post/:id", async (req, res) => {
         const { id } = req.params;
         const filter = { _id: ObjectId(id) };
@@ -57,6 +58,7 @@ const database = async () => {
         res.send(post);
     });
 
+    //Add post
     app.post("/post", async (req, res) => {
         const post = req.body;
         const result = await postCollection.insertOne(post);
@@ -65,9 +67,18 @@ const database = async () => {
         }
     });
 
+    //Get all posts
     app.get("/posts", async (req, res) => {
         const curser = postCollection.find({});
-        const posts = await curser.toArray();
+        const posts = await curser.sort({ _id: -1 }).toArray();
+        res.send(posts);
+    });
+
+    //Get top reaction post
+    app.get("/top-post", async (req, res) => {
+        const size = parseInt(req.query.size);
+        const curser = postCollection.find({});
+        const posts = await curser.sort({ total_likes: -1 }).limit(size).toArray();
         res.send(posts);
     });
 };
